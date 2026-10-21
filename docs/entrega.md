@@ -28,7 +28,7 @@ Um print da execução local já está em `docs/evidencias/interface.png`. Depoi
 
 ## 4. Executar os testes
 
-Siga os comandos do README. Os logs incluídos registram 26 testes do backend, oito de HTTP e 19 de interface aprovados no ambiente local. O Docker e o GitHub Actions ainda precisam de execução confirmada. Registre os seus resultados em `docs/testes.md` sem substituir o histórico por resultados que não executou.
+Siga os comandos do README. Os logs incluídos registram 26 testes do backend, oito de HTTP e 19 de interface aprovados no ambiente local. O Docker e o GitHub Actions também foram validados com sucesso na execução 39524247730, vinculada em `docs/testes.md`. Registre os seus resultados em `docs/testes.md` sem substituir o histórico por resultados que não executou.
 
 ## 5. Atualizar o GitHub
 

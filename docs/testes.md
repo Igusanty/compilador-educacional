@@ -1,5 +1,13 @@
 # Registro de testes — Etapa 2
 
+## Atualização: validação Docker concluída no GitHub
+
+Em 20/10/2026 (horário de Brasília), a execução [39524247730](https://github.com/Igusanty/compilador-educacional/actions/runs/39524247730), referente ao commit `164172040b6784b9a8e5977bcf927211fd436080`, terminou com sucesso em Ubuntu no GitHub Actions. Foram aprovados 26 testes do backend, oito verificações HTTP e 19 testes de interface. A configuração, construção e inicialização do Docker Compose, os healthchecks e a comunicação Nginx/Flask passaram. O print foi gerado também nesse ambiente e disponibilizado no artefato `evidencia-interface` da execução.
+
+A pendência de validação Docker mencionada no registro local abaixo foi resolvida por essa execução remota. O registro anterior é mantido como histórico.
+
+## Histórico da validação local
+
 Execução nesta sessão de desenvolvimento. O relógio do executor apresentou 20/10/2026; o contexto da sessão informou 21/10/2026. Os resultados abaixo são os efetivamente obtidos, sem execução remota de CI.
 
 ## Resultados
