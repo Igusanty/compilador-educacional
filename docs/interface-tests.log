@@ -1,0 +1,25 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> compilador-educacional@0.2.0 test
+> node tests/interface.cjs
+
+PASS Elementos principais e linguagem visíveis
+PASS Exemplo variavel: carregar, editar e enviar
+PASS Exemplo aritmetica: carregar, editar e enviar
+PASS Exemplo condicional: carregar, editar e enviar
+PASS Trocar exemplo substitui a entrada anterior
+PASS Entrada vazia não envia HTTP
+PASS Entrada em branco não envia HTTP
+PASS Integração real preserva caracteres e indentação
+PASS Código sintaticamente inválido é recebido nesta etapa
+PASS Limite de tamanho impede envio
+PASS Falha de rede libera os controles e permite nova tentativa
+PASS Erro HTTP 400 mostra orientação do backend como texto seguro
+PASS Erro HTTP 500 não expõe detalhes do servidor
+PASS Resposta inválida não gera falso sucesso
+PASS Resposta inválida não gera falso sucesso
+PASS Envio pendente bloqueia duplicação e preserva o programa
+PASS Timeout recupera interface
+PASS Regressão HTTP hello e health via proxy
+PASS Layout móvel sem rolagem horizontal
+RESULTADO: 19 aprovados; 0 reprovados

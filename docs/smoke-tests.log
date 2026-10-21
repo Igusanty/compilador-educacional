@@ -1,0 +1,9 @@
+PASS /: HTTP 200
+PASS /styles.css: HTTP 200
+PASS /app.js: HTTP 200
+PASS /api/health: HTTP 200
+PASS /api/hello: HTTP 200
+PASS /api/analisar: HTTP 200
+PASS /api/analisar: HTTP 400
+PASS /api/analisar: HTTP 400
+RESULTADO: 8 aprovados; 0 reprovados

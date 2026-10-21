@@ -3,25 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Compilador Educacional</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 720px; margin: 80px auto; padding: 0 20px; color: #222; }
-    h1 { margin-bottom: 8px; }
-    #mensagem { font-size: 1.5rem; margin-top: 32px; }
-  </style>
+  <title>Compilador Educacional | Python</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-  <h1>Compilador Educacional</h1>
-  <p>Projeto inicial para o estudo de conceitos de compiladores usando Python.</p>
-  <p id="mensagem">Carregando mensagem do backend...</p>
-  <script>
-    fetch('/api/hello')
-      .then(response => {
-        if (!response.ok) throw new Error('Falha na resposta do backend');
-        return response.json();
-      })
-      .then(data => { document.getElementById('mensagem').textContent = data.message; })
-      .catch(() => { document.getElementById('mensagem').textContent = 'Erro ao conectar com o backend.'; });
-  </script>
+  <header class="top"><div class="brand"><span class="mark" aria-hidden="true">&lt;/&gt;</span> Compilador Educacional</div><span class="tag">Python · Etapa 02</span></header>
+  <main>
+    <div class="intro"><p class="eyebrow">LABORATÓRIO DE COMPILADORES</p><h1>O primeiro passo começa<br>com o seu código.</h1><p>Escreva, escolha um exemplo e envie um trecho de Python para processamento.</p></div>
+    <div class="workspace">
+      <section class="panel editor-panel" aria-labelledby="editor-title">
+        <div class="panel-title"><h2 id="editor-title">Código-fonte</h2><span class="small-tag">.py</span></div>
+        <div class="examples"><label for="exemplo">Comece com um exemplo</label><select id="exemplo"><option value="">Escolha um exemplo…</option><option value="variavel">01 · Atribuição de variável</option><option value="aritmetica">02 · Operações aritméticas</option><option value="condicional">03 · Condicional if / else</option></select></div>
+        <label class="code-label" for="codigo">Seu programa em Python</label>
+        <textarea id="codigo" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="editor-help" placeholder="numero = 10"></textarea>
+        <div class="editor-footer"><span id="contador">0 caracteres</span><span>Texto editável</span></div>
+        <p id="editor-help" class="help">Até 20.000 caracteres. Você pode enviar código com erros intencionais.</p>
+        <button id="analisar" type="button">Solicitar análise <span aria-hidden="true">→</span></button>
+      </section>
+      <section class="panel results-panel" aria-labelledby="result-title">
+        <div class="panel-title"><h2 id="result-title">Resultado</h2><span id="estado" class="status" data-state="idle">Aguardando</span></div>
+        <div id="resultado" role="status" aria-live="polite" aria-atomic="true"><div class="result-icon" aria-hidden="true">↳</div><h3>Vamos experimentar?</h3><p>Insira um código ou selecione um exemplo. O retorno do servidor aparecerá aqui.</p></div>
+        <div class="scope"><h3>O que acontece nesta etapa?</h3><p>O sistema recebe o código e valida a entrada. Ainda não executa o programa nem realiza análises léxica, sintática ou semântica.</p></div>
+      </section>
+    </div>
+    <footer><span>Subconjunto previsto: atribuições, operações aritméticas e condicionais.</span><span>Aprender, passo a passo.</span></footer>
+  </main>
 </body>
 </html>
