@@ -1,139 +1,76 @@
-# Compilador Educacional — Etapa 2
+# Compilador Educacional — Etapa 3
 
-Aplicação educacional para estudantes experimentarem a entrada de programas de um subconjunto de **Python**. Esta versão recebe o código, valida a entrada e confirma o recebimento. **Ainda não executa programas nem realiza análise léxica, sintática ou semântica.**
+Scanner manual em Python, integrado à API Flask e à interface HTML/CSS/JavaScript existente. O scanner produz tokens e acumula erros; não executa programas nem verifica sintaxe ou semântica. Mantidos exemplos, validação, limites, controles de requisição, hello/health e Docker da Etapa 2.
 
-Continuação da primeira etapa: HTML/CSS/JavaScript servido por Nginx, backend Python/Flask e Docker Compose. As rotas anteriores de demonstração e saúde foram preservadas.
+## Executar
 
-## Executar com Docker
+Na pasta deste arquivo, com Docker Desktop iniciado:
 
-Instale e inicie o Docker Desktop (ou Docker Engine com Compose v2). Na pasta que contém `compose.yaml`:
-
-```bash
+```sh
 docker compose up --build --wait
 ```
 
-Abra **http://localhost:3000**. Para verificar os serviços e encerrar:
+Abra http://localhost:3000. A porta 3000 deve estar livre. Backend interno em 5000, sem credenciais ou novas variáveis.
 
-```bash
+```sh
 docker compose ps
 docker compose logs
 docker compose down
 ```
 
-A porta 3000 deve estar disponível. O backend é acessado internamente pelo Nginx, sem publicar a porta 5000. O navegador chama `/api/analisar`; o Nginx encaminha a chamada para `backend:5000/analisar` na rede do Compose. Não são necessárias credenciais nem variáveis de ambiente.
+## Tutorial
 
-## Usar a interface
+1. Selecione um exemplo e clique em Solicitar análise.
+2. Compare o texto original com a tabela: tipo é a categoria, lexema é o trecho reconhecido.
+3. Observe linha/coluna e contagem por categoria.
+4. Digite `x = 10 @` e veja os três tokens válidos e o erro na coluna 8.
+5. Digite `if + :`: a tokenização tem sucesso, embora isso não seja um programa sintaticamente válido.
 
-1. Escolha um dos três exemplos ou digite um programa.
-2. Edite o conteúdo, se desejar. Escolher outro exemplo substitui o texto atual.
-3. Clique em **Solicitar análise**.
-4. Confira a confirmação e a quantidade de linhas e caracteres recebidos.
+## Subconjunto léxico
 
-O código permanece no editor após o envio. Entradas vazias e com mais de 20.000 caracteres são recusadas. Durante a requisição, os controles ficam bloqueados para evitar duplicações. Falhas de rede, respostas inválidas e espera superior a dez segundos mostram uma mensagem e liberam nova tentativa. Recarregar a página apaga o conteúdo: não há persistência.
+| Categoria | Regra |
+|---|---|
+| Reservadas | `if`, `else`, sensíveis a maiúsculas |
+| Identificadores | ASCII `[A-Za-z_][A-Za-z_0-9]*`; outras palavras são identificadores, não comandos implementados |
+| Inteiros | `0` ou `[1-9][0-9]*`; sinal é operador separado |
+| Reais | `[0-9]+\.[0-9]+`; sem expoente; exemplo `3.14` |
+| Operadores | `+ - * / = == != < > <= >=`; prioridade ao operador de dois caracteres |
+| Delimitadores | `(`, `)`, `:` |
+| Comentários | `#` até fim da linha; não há comentário de bloco |
+| Espaços | Espaço, tab, LF, CR e CRLF ignorados; linhas/colunas começam em 1; tab conta um caractere |
+| Fora do escopo | Strings/caracteres entre aspas, Unicode em identificadores, expoentes, bases numéricas, listas, chaves, vírgulas, ponto e vírgula e operadores lógicos |
+| Erros | Caractere desconhecido ou literal malformado: acumular erro com localização e continuar |
 
-## Linguagem e exemplos
+O reconhecimento é caractere a caractere; expressões regulares apenas validam o literal já agrupado. Implementação própria evita dependências e torna regras e recuperação inspecionáveis. `12abc`, `1.2.3`, `01` e `1.` produzem erro de literal. Aspas são consumidas até fechamento ou fim de linha e diagnosticadas como construção não suportada; texto não fechado recebe mensagem específica. Comentários aceitam Unicode. Um arquivo só de comentários tem sucesso com zero tokens.
 
-O subconjunto previsto inclui atribuições, números, identificadores, operações `+`, `-`, `*`, `/`, parênteses e condicionais `if/else`. A comparação `>` integra o exemplo condicional planejado. A validade dessas construções será verificada nas etapas futuras.
+Nesta fase, indentação e quebras não viram INDENT/DEDENT/NEWLINE: o código original e posições são preservados. Na Etapa 4 será necessário acrescentar esses tokens ou analisar a disposição do código original para implementar a sintaxe Python. `//` e `**` são sequências de operadores simples, não operadores compostos suportados. Detectar combinações sintaticamente inadequadas cabe ao parser.
 
-**1. Atribuição de variável**
+## Contrato
 
-```python
-numero = 10
-```
-
-**2. Operações aritméticas**
-
-```python
-valor = 10
-resultado = (valor + 5) * 2
-```
-
-**3. Condicional**
-
-```python
-numero = 10
-if numero > 0:
-    resultado = numero + 1
-else:
-    resultado = 0
-```
-
-## Contrato da API
-
-`POST /api/analisar`, com cabeçalho `Content-Type: application/json`:
+`POST /api/analisar`, JSON `{"codigo":"x=1"}`. Nginx encaminha para `/analisar` no backend.
 
 ```json
-{"codigo":"numero = 10"}
+{"recebido":true,"etapa":"lexica","codigo":"x=1","caracteres":3,"linhas":1,"mensagem":"Tokenização concluída.","sucesso":true,"tokens":[{"tipo":"IDENTIFICADOR","lexema":"x","linha":1,"coluna":1,"inicio":0,"fim":1},{"tipo":"OPERADOR","lexema":"=","linha":1,"coluna":2,"inicio":1,"fim":2},{"tipo":"LITERAL_INTEIRO","lexema":"1","linha":1,"coluna":3,"inicio":2,"fim":3}],"erros":[]}
 ```
 
-Resposta HTTP 200:
+Offsets `inicio` inclusivo e `fim` exclusivo contam pontos Unicode, não bytes. Erro léxico mantém HTTP 200, `recebido:true`, `sucesso:false`, tokens válidos e lista `erros`, cada item com `tipo:ERRO_LEXICO`, lexema, linha, coluna e mensagem. HTTP 200 significa requisição processada, não programa válido. Mantidos HTTP 400 para entrada inválida/vazia/maior que 20.000 caracteres, 415 para conteúdo não JSON, 413 para corpo maior que 512 KiB e 500 genérico. Não há stack traces na interface. GET `/api/hello` e `/api/health` preservados.
 
-```json
-{
-  "recebido": true,
-  "mensagem": "Código recebido com sucesso. As análises léxica, sintática e semântica serão implementadas nas próximas etapas.",
-  "etapa": "recepcao",
-  "codigo": "numero = 10",
-  "caracteres": 11,
-  "linhas": 1
-}
-```
+## Testes
 
-`codigo` é preservado, inclusive espaços e indentação. `caracteres` conta pontos de código Unicode; `linhas` usa `str.splitlines()` do Python, sem contar uma linha vazia adicional por quebra final. O recebimento não confirma que o programa esteja correto: texto como `if ???` também é recebido.
+Python 3.12 e Node 22:
 
-Resposta de erro, por exemplo HTTP 400:
-
-```json
-{"recebido":false,"mensagem":"Informe um código-fonte antes de solicitar a análise.","erro":"ENTRADA_VAZIA"}
-```
-
-| HTTP | Situação |
-| --- | --- |
-| 400 | JSON malformado; corpo que não é objeto; `codigo` ausente, não textual, vazio ou acima de 20.000 caracteres |
-| 415 | Tipo de conteúdo diferente de JSON |
-| 413 | Corpo da requisição acima de 512 KiB no Flask |
-| 500 | Erro inesperado, com mensagem genérica para o usuário |
-
-As rotas `GET /api/hello` e `GET /api/health` continuam disponíveis. Diretamente no backend, os caminhos não incluem `/api`. Não há banco de dados, execução ou gravação dos programas enviados.
-
-## Testes automatizados
-
-Requisitos para testes: Python 3.12, Node.js 22 e npm. Na raiz:
-
-```bash
+```sh
 python -m pip install -r requirements-test.txt
-python -m pytest tests/test_backend.py -q
+python -m pytest tests -q
 npm ci
-npx playwright install chromium
-```
-
-Com a aplicação iniciada pelo Compose:
-
-```bash
+npx playwright install --with-deps chromium
+# Com Docker iniciado:
 python scripts/smoke.py
 npm test
 ```
 
-Em Linux, se faltarem bibliotecas do navegador, use `npx playwright install --with-deps chromium`. `BASE_URL` permite apontar os testes HTTP e de interface para outro endereço. A execução bem-sucedida da interface salva `docs/evidencias/interface.png`.
+Alternativa local: `python scripts/dev_server.py` (não valida Docker). `BASE_URL` altera endereço dos testes. O workflow executa todos os testes, Docker e integração real. Ver [docs/testes-etapa3.md](docs/testes-etapa3.md) para resultados efetivos. Os registros da Etapa 2 são históricos, não descrevem a implementação atual.
 
-No Windows, `powershell -ExecutionPolicy Bypass -File scripts/validar-docker.ps1` valida a configuração, inicia o Compose e executa os oito testes HTTP (requer Python). Depois, execute `npm test` para os testes de navegador.
+## Limitações
 
-Para desenvolvimento sem Docker, execute `python scripts/dev_server.py` em um terminal e os testes em outro. Esse servidor local usa Flask e um proxy Python e **não comprova a implantação Nginx/Docker**.
-
-O workflow `.github/workflows/tests.yml` está preparado para executar backend, construção e inicialização do Docker, smoke e navegador a cada push/PR. Sua presença não significa que uma execução remota tenha ocorrido. Consulte os resultados efetivos e limitações em [docs/testes.md](docs/testes.md).
-
-## Organização
-
-- `frontend/`: interface, exemplos, comunicação HTTP e configuração Nginx.
-- `backend/`: API Flask e módulo de validação.
-- `tests/`: validações, endpoints, integração, interface e regressões.
-- `scripts/`: servidor local de teste e verificação de implantação.
-- `docs/`: registros dos testes e evidência visual.
-
-## Limitações e próximas etapas
-
-A versão atual é destinada ao ambiente educacional local. O servidor Flask mantido da primeira etapa não constitui uma configuração de produção. O conteúdo não é salvo entre sessões. Não existem tokens, árvore sintática, tabela de símbolos ou verificação semântica. Os próximos analisadores deverão ser acrescentados progressivamente, preservando os testes existentes e documentando mudanças no contrato.
-
-## Demonstração e entrega
-
-Veja [docs/entrega.md](docs/entrega.md) para o roteiro da demonstração, atualização do repositório e pendências de validação.
+Não há AST, execução, análise sintática/semântica nem avaliação com estudantes. Interface apresenta tabela, totais, explicações e erros em texto seguro; não implementa animação caractere a caractere. Documentação e visualização não são alegadas como inéditas. Usabilidade em celular precisa de estudo com usuários; há teste automatizado de largura de tela.
