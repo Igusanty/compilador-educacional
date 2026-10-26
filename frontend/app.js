@@ -53,10 +53,11 @@ button.addEventListener('click', async () => {
     if (!response.ok) {
       show('error', 'Entrada não aceita', typeof data.mensagem === 'string' ? data.mensagem : 'Não foi possível processar a entrada. Revise o código e tente novamente.'); return;
     }
-    if (data.recebido !== true || data.etapa !== 'recepcao' || typeof data.mensagem !== 'string' || !Number.isInteger(data.linhas) || !Number.isInteger(data.caracteres)) {
+    if (data.recebido !== true || data.etapa !== 'lexica' || !Array.isArray(data.tokens) || !Array.isArray(data.erros) || typeof data.sucesso !== 'boolean' || typeof data.mensagem !== 'string' || !Number.isInteger(data.linhas) || !Number.isInteger(data.caracteres)) {
       throw new Error('Resposta incompatível');
     }
-    show('success', 'Código recebido!', data.mensagem, data);
+    show(data.sucesso ? 'success' : 'error', data.sucesso ? 'Análise léxica concluída' : 'Erros léxicos encontrados', data.mensagem, data);
+    renderTokens(data);
   } catch (_) {
     show('error', 'Falha de comunicação', 'Não foi possível comunicar com o servidor. Verifique a conexão e tente novamente.');
   } finally {
@@ -64,3 +65,22 @@ button.addEventListener('click', async () => {
   }
 });
 updateCount();
+
+function renderTokens(data) {
+  const info=document.createElement('p');
+  info.textContent='Token é a categoria; lexema é o trecho exato do código. Linha e coluna começam em 1. A tokenização não verifica sintaxe nem executa o programa.';
+  result.append(info);
+  const summary=document.createElement('p'); const groups={};
+  for(const t of data.tokens) groups[t.tipo]=(groups[t.tipo]||0)+1;
+  summary.textContent=`${data.tokens.length} tokens: `+Object.entries(groups).map(([k,v])=>`${k}: ${v}`).join(' · '); result.append(summary);
+  const wrap=document.createElement('div');wrap.className='token-scroll';
+  const table=document.createElement('table');table.id='tokens';
+  const caption=document.createElement('caption');caption.textContent='Tokens na ordem do código';table.append(caption);
+  const head=document.createElement('thead'); const hr=document.createElement('tr');
+  for(const label of ['Tipo','Lexema','Linha','Coluna']) {const th=document.createElement('th');th.scope='col';th.textContent=label;hr.append(th);}head.append(hr);table.append(head);
+  const body=document.createElement('tbody');
+  for(const token of data.tokens) {const row=document.createElement('tr'); for(const key of ['tipo','lexema','linha','coluna']){const cell=document.createElement('td');cell.textContent=token[key];row.append(cell);}body.append(row);}
+  table.append(body);wrap.append(table);result.append(wrap);
+  const errors=document.createElement('ul');errors.id='erros-lexicos';
+  for(const e of data.erros){const item=document.createElement('li');item.textContent=`Linha ${e.linha}, coluna ${e.coluna}: ${e.mensagem} Trecho: ${e.lexema}`;errors.append(item);}result.append(errors);
+}

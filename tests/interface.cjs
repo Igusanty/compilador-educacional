@@ -39,9 +39,9 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:3000';
   const responsePromise=p.waitForResponse(r=>r.url().endsWith('/api/analisar'));
   await send(p,code);const r=await responsePromise;assert.equal(r.status(),200);
   const data=await r.json();assert.equal(data.codigo,code);assert.equal(data.caracteres,Array.from(code).length);
-  await status(p,'success');assert.equal(await p.locator('#codigo').inputValue(),code);
+  await status(p,'error');assert.equal(await p.locator('#codigo').inputValue(),code);
  });
- await test('Código sintaticamente inválido é recebido nesta etapa',async p=>{await send(p,'if ???');await status(p,'success');});
+ await test('Código sintaticamente inválido é recebido nesta etapa',async p=>{await send(p,'if + :');await status(p,'success');});
  await test('Limite de tamanho impede envio',async p=>{await send(p,'x'.repeat(20001));await status(p,'error');assert((await p.locator('#resultado').innerText()).includes('20.000'));});
  await test('Falha de rede libera os controles e permite nova tentativa',async p=>{
   await p.route('**/api/analisar',r=>r.abort());await send(p);await status(p,'error');
@@ -79,6 +79,8 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:3000';
   await p.setViewportSize({width:390,height:844});assert(await p.locator('#codigo').isVisible());
   assert(await p.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
  });
+ await test('Tokens e posições reais',async p=>{await send(p,'x = 10');await status(p,'success');assert.equal(await p.locator('#tokens tbody tr').count(),3);assert((await p.locator('#tokens').innerText()).includes('LITERAL_INTEIRO'));});
+ await test('Acumula erros e mantém tokens seguintes',async p=>{await send(p,'@ x = 2 $');await status(p,'error');assert.equal(await p.locator('#erros-lexicos li').count(),2);assert.equal(await p.locator('#tokens tbody tr').count(),3);});
  if (!failed) {
   const p=await browser.newPage({viewport:{width:1400,height:1000},deviceScaleFactor:1});await p.goto(base);
   await p.locator('#exemplo').selectOption('condicional');await p.locator('#analisar').click();await status(p,'success');

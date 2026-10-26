@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import BadRequest, HTTPException
+from scanner import scan
 from validation import InvalidInput, validate_payload
 
 app = Flask(__name__)
@@ -30,12 +31,11 @@ def analisar():
         code = validate_payload(payload)
     except InvalidInput as exc:
         return error(str(exc), exc.code, 400)
-    return jsonify(
-        recebido=True,
-        mensagem='Código recebido com sucesso. As análises léxica, sintática e semântica serão implementadas nas próximas etapas.',
-        etapa='recepcao', codigo=code,
+    result = scan(code)
+    return jsonify(recebido=True, etapa='lexica', codigo=code,
         caracteres=len(code), linhas=len(code.splitlines()),
-    )
+        mensagem='Tokenização concluída.' if result['sucesso'] else 'Foram encontrados erros léxicos. Os tokens válidos foram preservados.',
+        **result)
 
 @app.errorhandler(HTTPException)
 def http_error(exc):

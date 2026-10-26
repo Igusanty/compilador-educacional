@@ -16,10 +16,10 @@ def test_preserves_code_without_analysis(client, code):
     assert r.status_code == 200
     data = r.get_json()
     assert data['codigo'] == code
-    assert data['recebido'] is True and data['etapa'] == 'recepcao'
+    assert data['recebido'] is True and data['etapa'] == 'lexica'
     assert data['caracteres'] == len(code)
     assert data['linhas'] == len(code.splitlines())
-    assert 'próximas etapas' in data['mensagem']
+    assert isinstance(data['tokens'],list) and isinstance(data['erros'],list)
 
 @pytest.mark.parametrize('payload,error', [({},'CAMPO_AUSENTE'),([], 'FORMATO_INVALIDO'),(None,'FORMATO_INVALIDO'),({'codigo':None},'TIPO_INVALIDO'),({'codigo':42},'TIPO_INVALIDO'),({'codigo':False},'TIPO_INVALIDO'),({'codigo':[]},'TIPO_INVALIDO'),({'codigo':''},'ENTRADA_VAZIA'),({'codigo':' \n\t'},'ENTRADA_VAZIA'),({'codigo':'x'*20001},'LIMITE_EXCEDIDO')])
 def test_invalid_payloads(client, payload, error):
