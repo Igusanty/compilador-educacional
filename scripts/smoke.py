@@ -26,6 +26,13 @@ check('/app.js',200)
 check('/api/health',200,key='status',value='ok')
 check('/api/hello',200,key='message',value='Hello, World!')
 check('/api/analisar',200,{'codigo':'numero = 10'},'recebido',True)
+check('/api/analisar',200,{'codigo':'numero = 10 +'},'sintatico',{
+    'sucesso': False, 'ast': None, 'erros': [{
+        'tipo': 'ERRO_SINTATICO', 'linha': 1, 'coluna': 14,
+        'encontrado': 'fim da linha', 'esperado': ['número', 'identificador', '('],
+        'mensagem': 'Esperado número, identificador, ( como operando. Encontrado: fim da linha.',
+    }],
+})
 check('/api/analisar',400,{'codigo':' \n\t'},'erro','ENTRADA_VAZIA')
 check('/api/analisar',400,{},'erro','CAMPO_AUSENTE')
 print(f'RESULTADO: {passed} aprovados; 0 reprovados')

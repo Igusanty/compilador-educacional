@@ -41,7 +41,25 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:3000';
   const data=await r.json();assert.equal(data.codigo,code);assert.equal(data.caracteres,Array.from(code).length);
   await status(p,'error');assert.equal(await p.locator('#codigo').inputValue(),code);
  });
- await test('Código sintaticamente inválido é recebido nesta etapa',async p=>{await send(p,'if + :');await status(p,'success');});
+ await test('Erro sintático preserva tokens e exibe a posição', async p => {
+  await send(p, 'x = (1 + 2');
+  await status(p, 'error');
+  assert.match(await p.locator('#erros-sintaticos').innerText(), /Linha 1, coluna 11.*fechar o grupo/);
+  assert.equal(await p.locator('#tokens tbody tr').count(), 6);
+  assert.equal(await p.locator('#ast').count(), 0);
+ });
+ await test('Árvore navegável mostra precedência e posições', async p => {
+  await send(p, 'x = 10 + 5 * 2');
+  await status(p, 'success');
+  const assignment = p.locator('#ast summary').filter({hasText:'Atribuição'});
+  await assignment.click();
+  await p.locator('#ast summary').filter({hasText:'Operação binária +'}).click();
+  const product = p.locator('#ast summary').filter({hasText:'Operação binária *'});
+  assert(await product.isVisible());
+  assert.match(await product.innerText(), /coluna 10/);
+  await assignment.click();
+  assert(!(await product.isVisible()));
+ });
  await test('Limite de tamanho impede envio',async p=>{await send(p,'x'.repeat(20001));await status(p,'error');assert((await p.locator('#resultado').innerText()).includes('20.000'));});
  await test('Falha de rede libera os controles e permite nova tentativa',async p=>{
   await p.route('**/api/analisar',r=>r.abort());await send(p);await status(p,'error');

@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import BadRequest, HTTPException
 from scanner import scan
+from syntax_analysis import analyze_syntax
 from validation import InvalidInput, validate_payload
 
 app = Flask(__name__)
@@ -32,7 +33,9 @@ def analisar():
     except InvalidInput as exc:
         return error(str(exc), exc.code, 400)
     result = scan(code)
-    return jsonify(recebido=True, etapa='lexica', codigo=code,
+    syntax = (analyze_syntax(code, result['tokens']) if result['sucesso']
+              else dict(sucesso=None, ast=None, erros=[]))
+    return jsonify(sintatico=syntax, recebido=True, etapa='lexica', codigo=code,
         caracteres=len(code), linhas=len(code.splitlines()),
         mensagem='Tokenização concluída.' if result['sucesso'] else 'Foram encontrados erros léxicos. Os tokens válidos foram preservados.',
         **result)
