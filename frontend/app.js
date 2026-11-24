@@ -53,11 +53,19 @@ button.addEventListener('click', async () => {
     if (!response.ok) {
       show('error', 'Entrada não aceita', typeof data.mensagem === 'string' ? data.mensagem : 'Não foi possível processar a entrada. Revise o código e tente novamente.'); return;
     }
-    if (data.recebido !== true || data.etapa !== 'lexica' || !Array.isArray(data.tokens) || !Array.isArray(data.erros) || typeof data.sucesso !== 'boolean' || typeof data.mensagem !== 'string' || !Number.isInteger(data.linhas) || !Number.isInteger(data.caracteres)) {
+    if (data.recebido !== true || data.etapa !== 'lexica' || !data.sintatico || !Array.isArray(data.sintatico.erros) || !Array.isArray(data.tokens) || !Array.isArray(data.erros) || typeof data.sucesso !== 'boolean' || typeof data.mensagem !== 'string' || !Number.isInteger(data.linhas) || !Number.isInteger(data.caracteres)) {
       throw new Error('Resposta incompatível');
     }
-    show(data.sucesso ? 'success' : 'error', data.sucesso ? 'Análise léxica concluída' : 'Erros léxicos encontrados', data.mensagem, data);
+    const syntax = data.sintatico;
+    if (!data.sucesso) {
+      show('error', 'Erros léxicos encontrados', data.mensagem + ' A análise sintática não foi executada.', data);
+    } else if (!syntax.sucesso) {
+      show('error', 'Erro sintático encontrado', 'Os tokens foram reconhecidos. Revise a estrutura do programa.', data);
+    } else {
+      show('success', 'Análise sintática concluída', 'Confira os tokens e a estrutura do programa na árvore.', data);
+    }
     renderTokens(data);
+    renderSyntax(syntax);
   } catch (_) {
     show('error', 'Falha de comunicação', 'Não foi possível comunicar com o servidor. Verifique a conexão e tente novamente.');
   } finally {
@@ -68,7 +76,7 @@ updateCount();
 
 function renderTokens(data) {
   const info=document.createElement('p');
-  info.textContent='Token é a categoria; lexema é o trecho exato do código. Linha e coluna começam em 1. A tokenização não verifica sintaxe nem executa o programa.';
+  info.textContent='Token é a categoria; lexema é o trecho exato do código. Linha e coluna começam em 1. O parser usa esses tokens para verificar a estrutura do programa.';
   result.append(info);
   const summary=document.createElement('p'); const groups={};
   for(const t of data.tokens) groups[t.tipo]=(groups[t.tipo]||0)+1;
@@ -83,4 +91,49 @@ function renderTokens(data) {
   table.append(body);wrap.append(table);result.append(wrap);
   const errors=document.createElement('ul');errors.id='erros-lexicos';
   for(const e of data.erros){const item=document.createElement('li');item.textContent=`Linha ${e.linha}, coluna ${e.coluna}: ${e.mensagem} Trecho: ${e.lexema}`;errors.append(item);}result.append(errors);
+}
+
+function renderSyntax(syntax) {
+  if (syntax.sucesso === null) return;
+  const section = document.createElement('section');
+  const title = document.createElement('h4');
+  section.append(title);
+  result.append(section);
+  if (!syntax.sucesso) {
+    title.textContent = 'Diagnóstico sintático';
+    const list = document.createElement('ul');
+    list.id = 'erros-sintaticos';
+    for (const error of syntax.erros) {
+      const item = document.createElement('li');
+      item.textContent = `Linha ${error.linha}, coluna ${error.coluna}: ${error.mensagem}`;
+      list.append(item);
+    }
+    section.append(list);
+    return;
+  }
+  title.textContent = 'Árvore sintática abstrata (AST)';
+  const help = document.createElement('p');
+  help.textContent = 'Expanda os nós para ver como as partes do programa se relacionam.';
+  const tree = document.createElement('div');
+  tree.id = 'ast';
+  tree.append(renderNode(syntax.ast, true));
+  section.append(help, tree);
+}
+
+function renderNode(node, open = false) {
+  const labels = {
+    Programa: 'Programa', Atribuicao: 'Atribuição', Condicional: 'Condicional',
+    Bloco: 'Bloco', Comparacao: 'Comparação', OperacaoBinaria: 'Operação binária',
+    OperacaoUnaria: 'Operação unária', Identificador: 'Identificador',
+    Inteiro: 'Inteiro', Real: 'Real'
+  };
+  const detail = node.operador ?? node.nome ?? node.valor;
+  const label = node.filhos.length ? document.createElement('summary') : document.createElement('div');
+  label.textContent = `${labels[node.tipo]}${detail === undefined ? '' : ' ' + detail} (linha ${node.linha}, coluna ${node.coluna})`;
+  if (!node.filhos.length) return label;
+  const group = document.createElement('details');
+  group.open = open;
+  group.append(label);
+  for (const child of node.filhos) group.append(renderNode(child));
+  return group;
 }

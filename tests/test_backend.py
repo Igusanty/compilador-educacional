@@ -61,3 +61,23 @@ def test_unexpected_error_has_no_internal_details(client,monkeypatch):
     r=client.post('/analisar',json={'codigo':'x = 1'})
     assert r.status_code==500 and r.get_json()['erro']=='ERRO_INTERNO'
     assert 'secret' not in r.get_data(as_text=True) and '/private' not in r.get_data(as_text=True)
+
+
+@pytest.mark.parametrize('code,lexical,syntactic', [
+    ('x = 1', True, True),
+    ('x = 1 +', True, False),
+    ('x = @', False, None),
+])
+def test_syntax_contract(client, code, lexical, syntactic):
+    from scanner import scan
+
+    response = client.post('/analisar', json={'codigo': code})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['sucesso'] is lexical
+    assert data['tokens'] == scan(code)['tokens']
+    assert data['erros'] == scan(code)['erros']
+    syntax = data['sintatico']
+    assert syntax['sucesso'] is syntactic
+    assert (syntax['ast'] is not None) is (syntactic is True)
+    assert bool(syntax['erros']) is (syntactic is False)
